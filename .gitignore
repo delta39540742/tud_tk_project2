@@ -1,0 +1,7 @@
+# file môi trường
+.venv
+
+# ảnh output 
+gauss_markov.png
+residual_plots.png
+ridge_trace.png

@@ -8,7 +8,12 @@ import random
 import math 
 import matplotlib.pyplot as plt
 
-def ridge_fit(X, y, lam):
+
+"""
+Mặc định, hàm giả định cột đầu tiên của X là intercept và không regularize hệ số intercept.
+Nếu muốn phạt toàn bộ hệ số, đặt penalize_intercept=True.
+"""
+def ridge_fit(X, y, lam, penalize_intercept=False):
     """
     Ridge Regression cài từ đầu.
 
@@ -27,8 +32,15 @@ def ridge_fit(X, y, lam):
     XtX  = matmul(Xt, X)             # p×p
     Xty  = matvec(Xt, y)             # p
 
+    # Ma trận phạt λI
+    penalty = eye(p)
+
+    # Không phạt intercept nếu cột đầu là intercept
+    if not penalize_intercept:
+        penalty[0][0] = 0
+
     # X^T X + λI
-    XtX_reg = mat_add(XtX, mat_scale(eye(p), lam))
+    XtX_reg = mat_add(XtX, mat_scale(penalty, lam))
 
     return matvec(inv(XtX_reg), Xty)
 
@@ -49,22 +61,38 @@ def ridge_trace(X, y, lambdas):
 
 
 
-def standardize_columns(X):
+def standardize_columns(X, has_intercept=True):
     """
-    Trừ trung bình rồi chia độ lệch chuẩn của từng cột.
-    Ridge cần X đã chuẩn hóa, nếu không thì kết quả co không công bằng
-    giữa các biến có thang đo khác nhau.
+    Chuẩn hóa từng cột của X.
+    Nếu có cột intercept/constant thì không chuẩn hóa cột đó.
     """
     n, p = shape(X)
-    means = [sum(X[i][j] for i  in range(n)) / n for j in range(p)]
-    stds = []
-    for j in range(p):
-        var = sum((X[i][j] - means[j]) ** 2 for i in range(n)) / n
-        stds.append(math.sqrt(var) if var > 1e-12 else 1.0)
-    X_std = [[(X[i][j] - means[j]) / stds[j] for j in range(p)]
-             for i in range(n)]
-    return X_std, means, stds
 
+    means = [0.0] * p
+    stds = [1.0] * p
+    X_std = [[0.0] * p for _ in range(n)]
+
+    for j in range(p):
+        col = [X[i][j] for i in range(n)]
+        mean = sum(col) / n
+        var = sum((v - mean) ** 2 for v in col) / n
+
+        is_constant = var <= 1e-12
+
+        if has_intercept and is_constant:
+            # Giữ nguyên cột constant/intercept
+            means[j] = 0.0
+            stds[j] = 1.0
+            for i in range(n):
+                X_std[i][j] = X[i][j]
+        else:
+            std = math.sqrt(var) if var > 1e-12 else 1.0
+            means[j] = mean
+            stds[j] = std
+            for i in range(n):
+                X_std[i][j] = (X[i][j] - mean) / std
+
+    return X_std, means, stds
 
 def center(y):
     """Trừ trung bình khỏi y (để khỏi cần intercept)."""
@@ -125,6 +153,9 @@ def plot_ridge_trace(lambdas, traces, true_beta=None,
     plt.savefig(savepath, dpi=120)
     plt.close(fig)
     print(f"[OK] Đã lưu {savepath}")
+
+    from IPython.display import Image
+    display(Image(savepath))
 
 
 # ============================================================

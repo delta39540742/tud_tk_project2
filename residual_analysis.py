@@ -170,6 +170,10 @@ def residual_plots(X, y, beta_hat, savepath="residual_plots.png"):
     plt.close(fig)
     print(f"[OK] Đã lưu {savepath}")
 
+    # hiển thị trực quan
+    from IPython.display import Image
+    display(Image(savepath))
+
     return {"residuals": e, "leverage": h, "sigma2": sigma2,
             "std_residuals": r, "cooks": cook}
 

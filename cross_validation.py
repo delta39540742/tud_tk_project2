@@ -10,9 +10,8 @@ from ols_implementation import (ols_fit)
 # ============================================================
 def _shuffle_indices(n, seed=None):
     idx = list(range(n))
-    if seed is not None:
-        rng = random.Random(seed)
-        rng.shuffle(idx)
+    rng = random.Random(seed)
+    rng.shuffle(idx)
     return idx
 
 
@@ -61,6 +60,12 @@ def kfold_cv(X, y, k, shuffle=True, seed=42):
         y_train = [y[i] for i in train_idx]
         X_test  = [X[i] for i in test_idx]
         y_test  = [y[i] for i in test_idx]
+
+        if len(X_train) <= len(X_train[0]):
+            raise ValueError(
+                "Train fold không đủ số dòng so với số biến. "
+                "Hãy giảm k hoặc giảm số biến trong X."
+            )
 
         beta_j, _ = ols_fit(X_train, y_train)
         y_pred = matvec(X_test, beta_j)
